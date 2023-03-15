@@ -1,5 +1,5 @@
 # simple-feather-m0-rfm95-tracker
- Simple GPS tracker that uses Adafruit Feather M0 with RFM95.
+ Simple GPS tracker that uses Adafruit Feather M0 with RFM95. Designed to use a network like TTN or Helium.
 
 
 ## Hardware:  

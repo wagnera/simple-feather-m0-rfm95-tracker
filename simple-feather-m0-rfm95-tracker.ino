@@ -235,13 +235,14 @@ void loop() {
 
     if (gps.location.isValid() && gps.location.isUpdated() && gps.location.age() < 2000 && gps.altitude.age() < 2000) {
 
+    Serial.print("Alt(m): ");
     Serial.print(gps.altitude.meters(), 6);
-    Serial.print(F(","));
+    Serial.print(F(", Lat: "));
     Serial.print(gps.location.lat(), 6);
-    Serial.print(F(","));
+    Serial.print(F(", Lon: "));
     Serial.print(gps.location.lng(), 6);
-    Serial.print(F(","));
-    Serial.println(gps.location.isValid(), 6);
+    Serial.print(F(", Valid fix: "));
+    Serial.println((gps.location.isValid() ? "True" : "False"));
         
     
     if (LMIC.opmode & OP_TXRXPEND) { 
@@ -255,6 +256,7 @@ void loop() {
       uint32_t altitude = gps.altitude.meters() + 1000; // offset by 1000 since storing in unsigned int and want some negative values 
       uint8_t hdop = gps.hdop.value()/10; 
 
+      Serial.println("Raw values: ");
       Serial.println(lat);
       Serial.println(lon);
       Serial.println(altitude);
@@ -279,6 +281,7 @@ void loop() {
       // 8 bits for HDOP
       data_frame[10] = hdop;
 
+      Serial.print("Final packet: ");
       for (int i = 0; i < sizeof(data_frame); i++)
       {
           printHex2(data_frame[i]);

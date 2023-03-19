@@ -29,7 +29,7 @@ will get rejected if frame count is lower than a previously transmitted packet. 
 
 /* DUTY_CYLE defines how often to transmit in seconds. Make sure to use airtime calculator
 to determine legally accepted intervals. See (https://avbentem.github.io/airtime-calculator/ttn/us915/18)*/
-#define DUTY_CYLE 60
+#define DUTY_CYLE 53 // processing takes around 7 seconds so take that into account
 
 // Storage for packet that is transmitted
 uint8_t data_frame[11];
@@ -217,12 +217,23 @@ void loop() {
   }
 #endif
 
-  while (Serial1.available() > 0)
-  
-  if (gps.encode(Serial1.read()))
-  {
+    uint32_t gps_process_start = millis();
+    while ((millis() - gps_process_start) < (5 * 1000)){ // process gps for 5 seconds
+      if (Serial1.available() > 0)
+      {
+        gps.encode(Serial1.read());
+      }
+    }
 
-    if (gps.location.isValid()) {
+    // Print some stats
+    Serial.print("Solution age: ");
+    Serial.println(gps.location.age());
+    Serial.print("Chars decoded from gps: ");
+    Serial.print(gps.charsProcessed());
+    Serial.print(" valid sentances processed: ");
+    Serial.println(gps.sentencesWithFix());
+
+    if (gps.location.isValid() && gps.location.isUpdated() && gps.location.age() < 2000 && gps.altitude.age() < 2000) {
 
     Serial.print(gps.altitude.meters(), 6);
     Serial.print(F(","));
@@ -283,10 +294,18 @@ void loop() {
       };
 
       Serial.print(F("Waiting "));
-
-      for (int i = 0;i<DUTY_CYLE;i++) { 
-        Serial.print(F("."));
-        delay(1000); 
+      uint32_t wait_start = millis();
+      uint16_t wait_status_idx = 0;
+      while ((millis() - wait_start) < (DUTY_CYLE * 1000)){ 
+        if (Serial1.available() > 0)
+        {
+          gps.encode(Serial1.read());
+        }
+        if ((uint16_t)((millis() - wait_start)/1000) > wait_status_idx)
+        {
+          Serial.print(".");
+          wait_status_idx++;
+        }
       }
       Serial.println(" done.");
 
@@ -297,7 +316,6 @@ void loop() {
       Serial.println(gps.satellites.value());
       delay(1000);
     }
- }
 }
 
 void printHex2(unsigned v) {
